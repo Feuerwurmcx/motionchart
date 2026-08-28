@@ -118,8 +118,18 @@ $(document).ready(function() {
         $(document).trigger("event:jsm-done", [node, args]);
     };
     Jsm.prototype.renderHtml = function(html, view, partials) {
+        // Mustache.tags ist global. Der Wert wird nur fuer diesen Aufruf
+        // gesetzt und danach wieder hergestellt, sonst rendert jeder andere
+        // Mustache-Nutzer der Seite anschliessend mit [[ ]] statt {{ }}.
+        // Die Sicherung findet den aktuellen Wert vor, geschachtelte Aufrufe
+        // rollen sich also korrekt zurueck.
+        const previous_tags = Mustache.tags;
         Mustache.tags = this.tags;
-        return Mustache.render(html, view, partials);
+        try {
+            return Mustache.render(html, view, partials);
+        } finally {
+            Mustache.tags = previous_tags;
+        }
     };
     Jsm.prototype.render = function(elementId, view, partials) {
         return this.renderHtml($(elementId).html(), view, partials);
