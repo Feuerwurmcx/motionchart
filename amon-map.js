@@ -98,17 +98,16 @@ $(document).ready(function() {
         this.currentSelectionIn = new Bacon.Bus();
     });
     amon.Map.addInitHook(function() {
-        let map = this;
-        map.attributionControl.setPrefix("");
-        map.attributionControl.setPosition('bottomright');
-        map.validData = map.data.filter(function(data) {
+        this.attributionControl.setPrefix("");
+        this.attributionControl.setPosition('bottomright');
+        this.validData = this.data.filter(function(data) {
             return data.hasOwnProperty("data");
         });
-        map.takeRegion = map.data.map(function(data) {
-            map.regionId = data.region_id;
+        this.takeRegion = this.data.map((data) => {
+            this.regionId = data.region_id;
             return true;
         });
-        let layerOrder = map.data.map(function(data) {
+        let layerOrder = this.data.map(function(data) {
             return data.layerOrder;
         });
         let geoLayers = {
@@ -122,12 +121,12 @@ $(document).ready(function() {
             'NUTS-1-Regionen': FORCE_SCRIPT_NAME + '/ammservice/ebene/nuts-1-region/',
             'NUTS-2-Regionen': FORCE_SCRIPT_NAME + '/ammservice/ebene/nuts-2-region/'
         };
-        map.setInitialStyle = function(feature, layer) {
+        this.setInitialStyle = (feature, layer) => {
             if (layer) {
-                layer.setStyle(map.layerStyle);
+                layer.setStyle(this.layerStyle);
             }
         };
-        map.newLayer = layerOrder
+        this.newLayer = layerOrder
         .take(1)
         .flatMap(function(el) {
             return Bacon.fromArray(el);
@@ -135,11 +134,11 @@ $(document).ready(function() {
         .filter(function(layer) {
             return !!geoLayers[layer];
         })
-        .map(function(name) {
+        .map((name) => {
             let url = geoLayers[name];
             if (name === 'Flexregionen') {
                 const searchParams = new URLSearchParams({
-                    region_id: map.regionId
+                    region_id: this.regionId
                 });
                 url += searchParams.toString();
             }
@@ -160,49 +159,49 @@ $(document).ready(function() {
                 };
             });
         }).changes();
-        map.newLayer.onValue(function(layer) {
+        this.newLayer.onValue((layer) => {
             let geojson = new L.GeoJSON();
             // Nur als onEachFeature sinnvoll: als options.style erwartet Leaflet
             // ein zurueckgegebenes Stilobjekt, die Funktion liefert aber keins.
-            geojson.options.onEachFeature = map.setInitialStyle;
+            geojson.options.onEachFeature = this.setInitialStyle;
             geojson.addData(layer.data);
-            map.addGeoJSONLayer(geojson, layer.name);
+            this.addGeoJSONLayer(geojson, layer.name);
         });
-        let allLayersDone = map.newLayer.mapEnd('we are done').filter(function(v) {
+        let allLayersDone = this.newLayer.mapEnd('we are done').filter(function(v) {
             return v === "we are done";
         });
-        Bacon.onValues(map.currentLayer.toProperty(), allLayersDone, function(layerName) {
+        Bacon.onValues(this.currentLayer.toProperty(), allLayersDone, (layerName) => {
             if (layerName === "EUROPE Regionen") {
                 layerName = "NUTS-0-Regionen";
             }
-            map.selectLayer(layerName);
+            this.selectLayer(layerName);
         });
-        Bacon.onValues(map.validData.toProperty(), map.takeRegion.toProperty(), allLayersDone, function(data) {
-            map.eachLayer(function(layer) {
+        Bacon.onValues(this.validData.toProperty(), this.takeRegion.toProperty(), allLayersDone, (data) => {
+            this.eachLayer((layer) => {
                 if (!layer.feature) {
                     return;
                 }
                 layer.feature.extendedProperties = data.data[layer.feature.properties.region] || {};
-                map.repaintQueue.push(layer);
+                this.repaintQueue.push(layer);
             });
         });
-        map.resizeTrigger.plug(Bacon.fromEventTarget(window, 'resize'));
-        map.resizeTrigger.onValue(function(trigger) {
+        this.resizeTrigger.plug(Bacon.fromEventTarget(window, 'resize'));
+        this.resizeTrigger.onValue((trigger) => {
             // invalidateSize(1, true) hat beide Argumente verworfen und exakt
             // wie ein argumentloser Aufruf gewirkt; jetzt steht das auch so da.
-            map.invalidateSize();
-            if (map.options.zoom) {
-                map.setZoom(map.options.zoom);
+            this.invalidateSize();
+            if (this.options.zoom) {
+                this.setZoom(this.options.zoom);
             }
             if (trigger === null) {
-                $(map.getContainer()).parent().css('height', $(window).outerHeight() - $(".footer").outerHeight(true) - 30);
+                $(this.getContainer()).parent().css('height', $(window).outerHeight() - $(".footer").outerHeight(true) - 30);
             } else if (trigger) {
-                map.triggerCenter.push(true);
+                this.triggerCenter.push(true);
             } else {
-                map.fitBounds(GERMANY_BOUNDS);
+                this.fitBounds(GERMANY_BOUNDS);
             }
         });
-        let displayedLayers = Bacon.fromLeafletEvent(map, 'layeradd').map(function(layer) {
+        let displayedLayers = Bacon.fromLeafletEvent(this, 'layeradd').map(function(layer) {
             if (layer.layer) {
                 return layer.layer;
             }
@@ -222,8 +221,8 @@ $(document).ready(function() {
         let mouseouts = displayedLayers.flatMap(function(layer) {
             return Bacon.fromLeafletLayerEvent(layer, "mouseout");
         }).changes();
-        map.currentSelection.plug(clicks);
-        map.repaintLayers = function() {
+        this.currentSelection.plug(clicks);
+        this.repaintLayers = function() {
             for (let key in this._layers) {
                 let layer = this._layers[key];
                 if (layer.setStyle && layer.feature) {
@@ -231,7 +230,7 @@ $(document).ready(function() {
                 }
             }
         };
-        map.repaintQueue.onValue(function(layer) {
+        this.repaintQueue.onValue((layer) => {
             let properties = layer.feature.properties;
             let selected = properties.selected || false;
             let hovered = properties.hovered || false;
@@ -240,7 +239,7 @@ $(document).ready(function() {
             // fuer alle Layer derselbe: nach einer ausgewaehlten Region behielten
             // alle danach gezeichneten Regionen deren opacity und Farbe. Nur
             // weight wurde per Hand zurueckgesetzt, der Rest blieb stehen.
-            let style = _.extend({}, map.layerStyle);
+            let style = _.extend({}, this.layerStyle);
             if (properties.layer && properties.layer.name === "Flexregion") {
                 let element = layer.getElement();
                 if (!selected) {
@@ -260,12 +259,12 @@ $(document).ready(function() {
             }
             if (localData) {
                 _.extend(style, {
-                    color: map.mapColor.getColorForValueHighlight(localData.value),
-                    fillColor: map.mapColor.getColorCodeForValue(localData.value)
+                    color: this.mapColor.getColorForValueHighlight(localData.value),
+                    fillColor: this.mapColor.getColorCodeForValue(localData.value)
                 });
                 if (hovered) {
                     _.extend(style, {
-                        fillColor: map.mapColor.getColorForValueHighlight(localData.value)
+                        fillColor: this.mapColor.getColorForValueHighlight(localData.value)
                     });
                 }
                 if (selected) {
@@ -291,41 +290,41 @@ $(document).ready(function() {
             }
             layer.setStyle(style);
         });
-        map.activation = map.currentSelection.slidingWindow(2, 2).filter(function(x) {
+        this.activation = this.currentSelection.slidingWindow(2, 2).filter(function(x) {
             return x[0] === x[1];
         }).map(function(x) {
             return x[0];
         });
-        map.hoverChanges = mouseovers.merge(mouseouts.map(function() {
+        this.hoverChanges = mouseovers.merge(mouseouts.map(function() {
             return null;
         }));
-        map.hoverChanges.onValue(function(hovered) {
-            map.eachLayer(function(layer) {
+        this.hoverChanges.onValue((hovered) => {
+            this.eachLayer((layer) => {
                 if (!layer.feature) {
                     return;
                 }
                 if (layer.feature.properties.region === hovered) {
                     layer.feature.properties.hovered = true;
-                    map.repaintQueue.push(layer);
+                    this.repaintQueue.push(layer);
                 } else {
                     if (layer.feature.properties.hovered === true) {
                         layer.feature.properties.hovered = false;
-                        map.repaintQueue.push(layer);
+                        this.repaintQueue.push(layer);
                     }
                 }
             });
         });
-        map.triggerCenter.onValue(function(state) {
+        this.triggerCenter.onValue((state) => {
             let selectedTopic = $("#faktencheck_content").data('topic');
-            let layer = map.selectedFeatureLayer;
+            let layer = this.selectedFeatureLayer;
             if (selectedTopic === "faktencheck_eu" && state && layer && layer.feature) {
-                setTimeout(function() {
-                    map.panTo(new L.LatLng(layer.feature.properties.lat, layer.feature.properties.lng));
+                setTimeout(() => {
+                    this.panTo(new L.LatLng(layer.feature.properties.lat, layer.feature.properties.lng));
                 }, 0);
             }
         });
-        Bacon.onValues(map.currentSelectionIn, allLayersDone, function(selected) {
-            map.eachLayer(function(layer) {
+        Bacon.onValues(this.currentSelectionIn, allLayersDone, (selected) => {
+            this.eachLayer((layer) => {
                 if (!layer.feature) {
                     return;
                 }
@@ -335,45 +334,45 @@ $(document).ready(function() {
                     // Bus ueberschrieben, ueber den die Ebenenauswahl laeuft -
                     // ein spaeteres map.currentLayer.push(name) lief danach ins
                     // Leere. Der ausgewaehlte Layer hat jetzt ein eigenes Feld.
-                    map.selectedFeatureLayer = layer;
-                    map.repaintQueue.push(layer);
-                    map.triggerCenter.push(true);
+                    this.selectedFeatureLayer = layer;
+                    this.repaintQueue.push(layer);
+                    this.triggerCenter.push(true);
                 } else {
                     if (layer.feature.properties.selected === true) {
                         layer.feature.properties.selected = false;
-                        map.repaintQueue.push(layer);
+                        this.repaintQueue.push(layer);
                     }
                 }
             });
         });
-        map.legendData = map.validData.filter(function(data) {
+        this.legendData = this.validData.filter(function(data) {
             return data.hasOwnProperty("legend");
         }).map(function(data) {
             return data.legend;
         });
-        map.attributionData = map.validData.filter(function(data) {
+        this.attributionData = this.validData.filter(function(data) {
             return data.hasOwnProperty("source");
         }).map(function(data) {
             return data.source;
         });
-        map.legendData.onValue(function(legend) {
-            map.mapColor = jsm.api.MapColor.init(map);
-            map.mapColor.setColors(legend);
-            if (map.options.legendControl)
-                map.legendControl._update();
-            let mm = MapMenu.init(map);
-            if (map.options.slideMenu)
-                map.slideMenu.setContents(mm);
+        this.legendData.onValue((legend) => {
+            this.mapColor = jsm.api.MapColor.init(this);
+            this.mapColor.setColors(legend);
+            if (this.options.legendControl)
+                this.legendControl._update();
+            let mm = MapMenu.init(this);
+            if (this.options.slideMenu)
+                this.slideMenu.setContents(mm);
             if (mm.classSlider) {
                 let slider = mm.classSlider.data("ionRangeSlider");
                 slider.is_start = true;
                 slider.update(mm.options.classSlider);
             }
         });
-        map.attributionData.onValue(function(source) {
-            map.attributionControl._attributions = {};
-            map.attributionControl.addAttribution('Kartenmaterial: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors');
-            map.attributionControl.addAttribution("<br>" + source);
+        this.attributionData.onValue((source) => {
+            this.attributionControl._attributions = {};
+            this.attributionControl.addAttribution('Kartenmaterial: &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors');
+            this.attributionControl.addAttribution("<br>" + source);
         });
     });
 });

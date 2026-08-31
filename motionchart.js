@@ -2810,10 +2810,10 @@ $(document).ready(function() {
         this.svg.selectAll(".bubble-line-group").data(data).enter().append("g").attr("class", "bubble-line-group")
         .attr("region_id", function(d) {
             return d.region_id;
-        }).each(function(d) {
+        }).each((d, _i, _nodes) => {
             const region_id = d.region_id,
                 lines = region_lines[region_id],
-                group = this;
+                group = _nodes[_i];
             for (let l = 0; l < lines.length - 1; l++) {
                 const d1 = lines[l],
                     d2 = lines[l + 1];
