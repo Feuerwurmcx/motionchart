@@ -3346,7 +3346,13 @@ $(document).ready(function() {
         this.activateControls(false);
         if (this.isViewBubbles()) {
             if (this.isShowBubbleTrails()) {
+                // show_bubble_trails_once_more sorgt fuer genau einen letzten
+                // Durchlauf, der die Spuren ausblendet. Der Render-Kontext ist
+                // schon vor dem Zuruecksetzen gebaut worden und muss den neuen
+                // Wert uebernehmen - sonst rechnet calculateBubbleTrailData noch
+                // mit "Spuren an" und sie bleiben stehen.
                 this.show_bubble_trails_once_more = false;
+                ctx.show_bubble_trails = this.isShowBubbleTrails();
                 svg.selectAll(".circle-bubble-trail").duration(duration).ease(d3.easeLinear).each((d) => {
                     this.calculateBubbleTrailData(d, ctx);
                 }).attr("rx", function(d) {
