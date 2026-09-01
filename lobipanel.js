@@ -1,56 +1,61 @@
-Math.randomString = function(n) {
-    let text = "";
-    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (let i = 0; i < n; i++)
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    return text;
-};
-String.prototype.getCss = function() {
-    let css = {};
-    let declarations = this.valueOf().split(';');
-    for (let declaration of declarations) {
-        let entry = declaration.trim();
-        if (!entry) {
-            continue;
+// Sammelstelle statt Erweiterung der eingebauten Objekte. Math, String.prototype
+// und Number.prototype gehoeren nicht der Anwendung; was dort abgelegt wird,
+// sieht jeder andere Code auf der Seite und kann mit kuenftigen Sprachversionen
+// oder anderen Bibliotheken kollidieren.
+const LobiUtil = {
+    randomString: function(n) {
+        let text = "";
+        let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for (let i = 0; i < n; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
-        let separator = entry.indexOf(':');
-        if (separator === -1) {
-            continue;
+        return text;
+    },
+    getCss: function(style) {
+        let css = {};
+        if (style === null || style === undefined) {
+            return css;
         }
-        // Trennung am ersten Doppelpunkt statt split(':'): Werte duerfen selbst
-        // welche enthalten, etwa bei url(http://...). $.trim entfaellt, das gibt
-        // es in jQuery 4 nicht mehr.
-        css[entry.slice(0, separator).trim()] = entry.slice(separator + 1).trim();
+        for (let declaration of String(style).split(';')) {
+            let entry = declaration.trim();
+            if (!entry) {
+                continue;
+            }
+            let separator = entry.indexOf(':');
+            if (separator === -1) {
+                continue;
+            }
+            // Trennung am ersten Doppelpunkt statt split(':'): Werte duerfen
+            // selbst welche enthalten, etwa bei url(http://...).
+            css[entry.slice(0, separator).trim()] = entry.slice(separator + 1).trim();
+        }
+        return css;
+    },
+    toCamel: function(value) {
+        return String(value).replace(/(-[a-z])/g, function(match) {
+            return match.toUpperCase().replace('-', '');
+        });
+    },
+    toDash: function(value) {
+        return String(value).replace(/([A-Z])/g, function(match) {
+            return "-" + match.toLowerCase();
+        });
+    },
+    toUnderscore: function(value) {
+        return String(value).replace(/([A-Z])/g, function(match) {
+            return "_" + match.toLowerCase();
+        });
+    },
+    isBetween: function(value, num1, num2, including) {
+        if (including) {
+            return value <= num2 && value >= num1;
+        }
+        return value < num2 && value > num1;
     }
-    return css;
 };
-String.prototype.toCamel = function() {
-    return this.replace(/(-[a-z])/g, function($1) {
-        return $1.toUpperCase().replace('-', '');
-    });
-};
-String.prototype.toDash = function() {
-    return this.replace(/([A-Z])/g, function($1) {
-        return "-" + $1.toLowerCase();
-    });
-};
-String.prototype.toUnderscore = function() {
-    return this.replace(/([A-Z])/g, function($1) {
-        return "_" + $1.toLowerCase();
-    });
-};
-Number.prototype.isBetween = function(num1, num2, including) {
-    if (!including) {
-        if (this.valueOf() < num2 && this.valueOf() > num1) {
-            return true;
-        }
-    } else {
-        if (this.valueOf() <= num2 && this.valueOf() >= num1) {
-            return true;
-        }
-    }
-    return false;
-};
+// Zusaetzlich am window, damit andere Dateien die Helfer erreichen, die bisher
+// an Math bzw. den Prototypen hingen.
+window.LobiUtil = LobiUtil;
 $.fn.insertAt = function(i, selector) {
     let object = selector;
     if (typeof selector === 'string') {
@@ -306,14 +311,14 @@ $(function() {
             } else {
                 // getCss() liefert Strings. Ohne parseInt wurde lexikografisch
                 // verglichen, "9999" galt damit als groesser als "10001".
-                max = parseInt(style.getCss()['z-index'], 10) || 0;
+                max = parseInt(LobiUtil.getCss(style)['z-index'], 10) || 0;
             }
             for (let i = 1; i < panels.length; i++) {
                 style = $(panels[i]).attr('style');
                 if (!style) {
                     cur = 0;
                 } else {
-                    cur = parseInt(style.getCss()['z-index'], 10) || 0;
+                    cur = parseInt(LobiUtil.getCss(style)['z-index'], 10) || 0;
                 }
                 if (cur > max) {
                     id = $(panels[i]).data('inner-id');
@@ -505,7 +510,7 @@ $(function() {
             let $el = this.$el;
             let options = {};
             for (let key in $.fn.lobiPanel.DEFAULTS) {
-                let k = key.toDash();
+                let k = LobiUtil.toDash(key);
                 let val = $el.data(k);
                 if (val !== undefined) {
                     if (typeof $.fn.lobiPanel.DEFAULTS[key] !== 'object') {
@@ -717,7 +722,7 @@ $(function() {
                 _changeClassOfControl($heading.find('[data-func="minimize"]'));
             } else {
                 this.enableTooltips();
-                let css = this.$el.attr('old-style').getCss();
+                let css = LobiUtil.getCss(this.$el.attr('old-style'));
                 this.$el.css({
                     position: css.position || 'fixed',
                     'z-index': css['z-index'],
@@ -834,7 +839,7 @@ $(function() {
             _triggerEvent("beforeSmallSize");
             _changeClassOfControl($heading.find('[data-func="expand"]'));
             $heading.find('[data-func="expand"]').tooltip('hide');
-            let css = this.$el.attr('old-style').getCss();
+            let css = LobiUtil.getCss(this.$el.attr('old-style'));
             this.$el.animate({
                 left: css.left,
                 top: css.top,
@@ -1178,7 +1183,7 @@ $(function() {
         this.$el = $el;
         if (!this.$el.data('inner-id')) {
             this.hasRandomId = true;
-            this.$el.attr('data-inner-id', Math.randomString(10));
+            this.$el.attr('data-inner-id', LobiUtil.randomString(10));
         }
         innerId = this.$el.data('inner-id');
         if (!this.hasRandomId) {
