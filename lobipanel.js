@@ -79,11 +79,15 @@ $.fn.insertAt = function(i, selector) {
     });
     return this;
 };
-$.fn.disableSelection = function() {
-    return this.attr('unselectable', 'on').css('user-select', 'none').on('selectstart', false);
+// Hiessen frueher disableSelection/enableSelection und haben damit die
+// gleichnamigen Methoden von jQuery UI ueberschrieben. Der selectstart-Handler
+// bekommt zusaetzlich einen Namensraum: off('selectstart') ohne Namensraum hat
+// auch fremde Handler dieses Typs entfernt, unter anderem die von jQuery UI.
+$.fn.lobiDisableSelection = function() {
+    return this.attr('unselectable', 'on').css('user-select', 'none').on('selectstart.lobiSelection', false);
 };
-$.fn.enableSelection = function() {
-    return this.removeAttr('unselectable').css('user-select', 'initial').off('selectstart');
+$.fn.lobiEnableSelection = function() {
+    return this.removeAttr('unselectable').css('user-select', 'initial').off('selectstart.lobiSelection');
 };
 $(function() {
     let LobiPanel = function($el, options) {
@@ -999,11 +1003,11 @@ $(function() {
                 maxHeight: this.$options.maxHeight,
                 handles: handles,
                 start: () => {
-                    this.$el.disableSelection();
+                    this.$el.lobiDisableSelection();
                     _triggerEvent('resizeStart');
                 },
                 stop: () => {
-                    this.$el.enableSelection();
+                    this.$el.lobiEnableSelection();
                     _triggerEvent('resizeStop');
                 },
                 resize: () => {
