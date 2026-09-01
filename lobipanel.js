@@ -531,6 +531,9 @@ $(function() {
         let _saveLocalStorage = function(storage) {
             localStorage.setItem(storagePrefix + innerId, JSON.stringify(storage));
         };
+        let _removeLocalStorage = function() {
+            localStorage.removeItem(storagePrefix + innerId);
+        };
         let _applyState = (state) => {
             switch (state) {
             case 'unpinned':
@@ -1096,6 +1099,12 @@ $(function() {
             this.$options.sortable = false;
             _enableSorting();
             _removeInnerIdFromParent(innerId);
+            // Nur bei fester inner-id: mit zufaelliger id hat dieses Panel nie
+            // etwas gespeichert, und der Konstruktor hat localStorage dann auch
+            // nie angefasst.
+            if (!this.hasRandomId) {
+                _removeLocalStorage();
+            }
             this.$el
             .removeClass('lobipanel lobipanel-sortable panel-unpin panel-minimized panel-collapsed panel-expanded controls-expanded')
             .removeAttr('data-inner-id')
