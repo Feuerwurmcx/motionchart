@@ -447,13 +447,19 @@ $(function() {
         };
         let _removeInnerIdFromParent = function(innerId) {
             let parent = $('[' + LobiPanel.PRIVATE_OPTIONS.parentAttr + '~=' + innerId + ']');
-            let innerIds = parent.attr(LobiPanel.PRIVATE_OPTIONS.parentAttr).replace(innerId, '').trim().replace(/\s{2,}/g, ' ');
-            parent.attr(LobiPanel.PRIVATE_OPTIONS.parentAttr, innerIds);
+            let innerIds = parent.attr(LobiPanel.PRIVATE_OPTIONS.parentAttr);
+            if (innerIds === undefined) {
+                return;
+            }
+            parent.attr(LobiPanel.PRIVATE_OPTIONS.parentAttr, innerIds.replace(innerId, '').trim().replace(/\s{2,}/g, ' '));
         };
         let _onToggleIconsBtnClick = () => {
             $heading.find('.toggle-controls').on('click.lobiPanel', () => {
                 this.$el.toggleClass("controls-expanded");
             });
+        };
+        let _offToggleIconsBtnClick = () => {
+            $heading.find('.toggle-controls').off('click.lobiPanel');
         };
         let _adjustForScreenSize = () => {
             this.disableTooltips();
@@ -467,10 +473,21 @@ $(function() {
                 });
             }
         };
+        let _onWindowResize = null;
         let _enableResponsiveness = function() {
-            $(window).on('resize.lobiPanel', function() {
+            // Den Handler festhalten: der Namensraum resize.lobiPanel gehoert
+            // allen Panels gemeinsam. Ein off() nur ueber den Namensraum wuerde
+            // beim Zerstoeren eines Panels auch alle anderen abmelden.
+            _onWindowResize = function() {
                 _adjustForScreenSize();
-            });
+            };
+            $(window).on('resize.lobiPanel', _onWindowResize);
+        };
+        let _disableResponsiveness = function() {
+            if (_onWindowResize) {
+                $(window).off('resize.lobiPanel', _onWindowResize);
+                _onWindowResize = null;
+            }
         };
         let _setBodyHeight = () => {
             if (this.$options.bodyHeight !== 'auto') {
@@ -1044,12 +1061,47 @@ $(function() {
             return this;
         };
         this.destroy = () => {
+            this.disableTooltips();
             this.disableDrag();
             this.disableResize();
+            _disableResponsiveness();
+            _offPanelClick();
+            _removeExpandOnHeaderClick();
+            _offToggleIconsBtnClick();
+            if (this.isOnFullScreen()) {
+                $('body').css('overflow', '');
+            }
+            // Body und Footer koennen eingeklappt oder auf feste Masse gesetzt
+            // sein; beides zuruecknehmen.
+            $body.css({
+                display: '',
+                width: '',
+                height: '',
+                overflow: ''
+            });
+            this.$el.find('.panel-footer').css('display', '');
+            // Ein entlostes oder minimiertes Panel haengt an <body> bzw. in der
+            // Minimiert-Leiste. Erst zurueck an seinen Platz - sonst bliebe es
+            // dort mit position:fixed liegen, und das nachfolgende
+            // _enableSorting() wuerde <body> sortierbar machen.
+            if (!this.isPinned() || this.$el.hasClass('panel-minimized')) {
+                _insertInParent();
+                this.$el.removeAttr('style');
+                let footer = _getFooterForMinimizedPanels();
+                if (footer.children().length === 0) {
+                    footer.remove();
+                    $('body').removeClass('lobipanel-minimized');
+                }
+            }
             this.$options.sortable = false;
             _enableSorting();
             _removeInnerIdFromParent(innerId);
-            this.$el.removeClass('lobipanel').removeAttr('data-inner-id').removeAttr('data-index').removeData('lobiPanel');
+            this.$el
+            .removeClass('lobipanel lobipanel-sortable panel-unpin panel-minimized panel-collapsed panel-expanded controls-expanded')
+            .removeAttr('data-inner-id')
+            .removeAttr('data-index')
+            .removeAttr('old-style')
+            .removeData('lobiPanel');
             $heading.find('.dropdown').remove();
             return this.$el;
         };
