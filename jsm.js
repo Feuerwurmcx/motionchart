@@ -44,7 +44,7 @@ $(document).ready(function() {
             const $element = $(element),
                 command = $element.data(this.triggerCommand) || "",
                 bind = force || $element.data(this.triggerBind) !== false;
-            let priority = parseInt($element.data(this.triggerPriority) || 0, 10);
+            let priority = Number.parseInt($element.data(this.triggerPriority) || 0, 10);
             if (!Number.isFinite(priority)) {
                 priority = 0;
             }

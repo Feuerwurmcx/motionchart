@@ -69,7 +69,7 @@ $.fn.insertAt = function(i, selector) {
     // attr() statt data(): geschrieben wird per attr(), und der data-Cache von
     // jQuery wird davon nicht aktualisiert - beim zweiten Aufruf haette data()
     // noch den Wert des ersten geliefert.
-    let oldIndex = parseInt(this.attr('data-index'), 10);
+    let oldIndex = Number.parseInt(this.attr('data-index'), 10);
     this.attr('data-index', i);
     object.find(">*:nth-child(" + i + ")").after(this);
     object.children().each(function(index, el) {
@@ -77,9 +77,9 @@ $.fn.insertAt = function(i, selector) {
         if (oldIndex < i && index > oldIndex && index <= i) {
             // hiess frueher data('data-index') und suchte damit ein Attribut
             // data-data-index; das Ergebnis war immer NaN.
-            $el.attr('data-index', parseInt($el.attr('data-index'), 10) - 1);
+            $el.attr('data-index', Number.parseInt($el.attr('data-index'), 10) - 1);
         } else if (oldIndex >= i && index > i && index <= oldIndex) {
-            $el.attr('data-index', parseInt($el.attr('data-index'), 10) + 1);
+            $el.attr('data-index', Number.parseInt($el.attr('data-index'), 10) + 1);
         }
     });
     return this;
@@ -311,14 +311,14 @@ $(function() {
             } else {
                 // getCss() liefert Strings. Ohne parseInt wurde lexikografisch
                 // verglichen, "9999" galt damit als groesser als "10001".
-                max = parseInt(LobiUtil.getCss(style)['z-index'], 10) || 0;
+                max = Number.parseInt(LobiUtil.getCss(style)['z-index'], 10) || 0;
             }
             for (let i = 1; i < panels.length; i++) {
                 style = $(panels[i]).attr('style');
                 if (!style) {
                     cur = 0;
                 } else {
-                    cur = parseInt(LobiUtil.getCss(style)['z-index'], 10) || 0;
+                    cur = Number.parseInt(LobiUtil.getCss(style)['z-index'], 10) || 0;
                 }
                 if (cur > max) {
                     id = $(panels[i]).data('inner-id');
@@ -327,7 +327,7 @@ $(function() {
             }
             return {
                 "id": id,
-                "z-index": parseInt(max, 10)
+                "z-index": Number.parseInt(max, 10)
             };
         };
         let _onPanelClick = () => {

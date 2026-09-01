@@ -1957,7 +1957,7 @@ $(document).ready(function() {
         this.info('draw');
         d3.select("#chart").select("svg").remove();
         this.svg = d3.select("#chart").append("svg").attr("width", this.config.size.width).attr("height", this.config.size.height).append("g").attr("id", "svg-main").attr("transform", "translate(" + this.config.margin.left + "," + this.config.margin.top + ")");
-        this.year_label = this.svg.append("text").attr('text-anchor', 'middle').attr('fill', this.config.year.fill).style('font-family', this.config.year.font.family).style('font-size', parseInt(this.config.size.width / this.config.year.size_factor) + 'px').style('font-weight', this.config.year.weight).style('pointer-events', 'none').attr('id', 'year-label').text('XXXX');
+        this.year_label = this.svg.append("text").attr('text-anchor', 'middle').attr('fill', this.config.year.fill).style('font-family', this.config.year.font.family).style('font-size', Number.parseInt(this.config.size.width / this.config.year.size_factor) + 'px').style('font-weight', this.config.year.weight).style('pointer-events', 'none').attr('id', 'year-label').text('XXXX');
         let box = this.year_label.node().getBBox();
         let x = (this.config.size.width - this.config.margin.left - this.config.margin.right) / 2;
         let y = this.config.margin.top + (this.config.size.height - this.config.margin.top - this.config.margin.bottom) / 2 + box.height / 4;
@@ -2116,8 +2116,8 @@ $(document).ready(function() {
             }
             let p = d3.mouse(_nodes[_i]),
                 s = this.matte_group.select('.chart-matte-selection'),
-                x1 = parseInt(s.attr('x')),
-                y1 = parseInt(s.attr('y')),
+                x1 = Number.parseInt(s.attr('x')),
+                y1 = Number.parseInt(s.attr('y')),
                 width = d3.max([1, p[0] - x1]),
                 height = d3.max([1, p[1] - y1]),
                 x2 = x1 + width,
@@ -2695,8 +2695,8 @@ $(document).ready(function() {
                 context.style.opacity = 0;
             }
         } else {
-            let x = typeof previous.x !== 'undefined' ? previous.x : parseFloat(context.getAttribute('x')),
-                y = typeof previous.y !== 'undefined' ? previous.y : parseFloat(context.getAttribute('y'));
+            let x = typeof previous.x !== 'undefined' ? previous.x : Number.parseFloat(context.getAttribute('x')),
+                y = typeof previous.y !== 'undefined' ? previous.y : Number.parseFloat(context.getAttribute('y'));
             this.setBubbleXYR(final, x, y, default_radius, 0, 0);
         }
         previous.validxy = validxy;
@@ -2889,9 +2889,9 @@ $(document).ready(function() {
         this.overRegion(data.region_id);
         d3.select(context).style("cursor", "pointer");
         let bubble = d3.select(context),
-            w2 = parseFloat(bubble.attr('width')) / 2,
-            h2 = parseFloat(bubble.attr('height')) / 2;
-        this.showFocus(parseInt(parseFloat(bubble.attr('x')) + w2), parseInt(parseFloat(bubble.attr('y')) + h2), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.y[0]), this.getIndicatorFormatValue(this.getIndicatorX(), data[this.getIndicatorX()]), this.getIndicatorFormatValue(this.getIndicatorY(), data[this.getIndicatorY()]));
+            w2 = Number.parseFloat(bubble.attr('width')) / 2,
+            h2 = Number.parseFloat(bubble.attr('height')) / 2;
+        this.showFocus(Number.parseInt(Number.parseFloat(bubble.attr('x')) + w2), Number.parseInt(Number.parseFloat(bubble.attr('y')) + h2), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.y[0]), this.getIndicatorFormatValue(this.getIndicatorX(), data[this.getIndicatorX()]), this.getIndicatorFormatValue(this.getIndicatorY(), data[this.getIndicatorY()]));
         let display_value = this.getIndicatorFormatValue(this.getIndicatorR(), data[this.getIndicatorR()]);
         this.tooltip.text(this.getRegionName(data.region_id)).style("visibility", "visible");
         this.tooltip2.text(this.getIndicatorName(this.getIndicatorR()) + ' : ' + display_value).style("visibility", "visible");
@@ -2945,12 +2945,12 @@ $(document).ready(function() {
             d3.select(_nodes[_i]).style("cursor", "pointer");
             let year = Math.round(this.scales.x.invert(d3.mouse(_nodes[_i])[0]));
             let dot = this.selectTimeLineDotByYear(d.value, year);
-            this.showFocus(parseInt(dot.attr('cx')), parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), year, this.getIndicatorFormatValue(this.getIndicatorR(), dot.data()[0][this.getIndicatorR()]));
+            this.showFocus(Number.parseInt(dot.attr('cx')), Number.parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), year, this.getIndicatorFormatValue(this.getIndicatorR(), dot.data()[0][this.getIndicatorR()]));
             return this.tooltip.text(this.getRegionName(d.value)).style("visibility", "visible");
         }).on("mousemove", (d, _i, _nodes) => {
             let year = Math.round(this.scales.x.invert(d3.mouse(_nodes[_i])[0]));
             let dot = this.selectTimeLineDotByYear(d.value, year);
-            this.showFocus(parseInt(dot.attr('cx')), parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), year, this.getIndicatorFormatValue(this.getIndicatorR(), dot.data()[0][this.getIndicatorR()]));
+            this.showFocus(Number.parseInt(dot.attr('cx')), Number.parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), year, this.getIndicatorFormatValue(this.getIndicatorR(), dot.data()[0][this.getIndicatorR()]));
             return this.tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
         }).on("mouseout", (d, _i, _nodes) => {
             this.outRegion(d.value);
@@ -2992,12 +2992,12 @@ $(document).ready(function() {
             }).attr("r", this.config.timeline.dot.radius).on("mouseover", (d, _i, _nodes) => {
                 this.overRegion(d.region_id);
                 let dot = d3.select(_nodes[_i]);
-                this.showFocus(parseInt(dot.attr('cx')), parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), d.year, d[this.getIndicatorR()]);
+                this.showFocus(Number.parseInt(dot.attr('cx')), Number.parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), d.year, d[this.getIndicatorR()]);
                 d3.select(_nodes[_i]).style("cursor", "pointer");
                 return this.tooltip.text(this.getRegionName(d.region_id)).style("visibility", "visible");
             }).on("mousemove", (d, _i, _nodes) => {
                 let dot = d3.select(_nodes[_i]);
-                this.showFocus(parseInt(dot.attr('cx')), parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), d.year, d[this.getIndicatorR()]);
+                this.showFocus(Number.parseInt(dot.attr('cx')), Number.parseInt(dot.attr('cy')), this.scales.x(this.domains.x[0]), this.scales.y(this.domains.r[0]), d.year, d[this.getIndicatorR()]);
                 return this.tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
             }).on("mouseout", (d, _i, _nodes) => {
                 this.outRegion(d.region_id);
@@ -3024,7 +3024,7 @@ $(document).ready(function() {
             this.tooltip2.text(rank + '/' + total).style("visibility", "visible");
             let bar = d3.select(_nodes[_i]);
             let data = this.getDataYearDict();
-            this.showFocus(parseInt(bar.attr('x')), d.bar.indicator_pos ? parseInt(bar.attr('y')) : this.scales.y(0) + d.bar.scaled.height, this.scales.x(this.domains.x[0]), null, null, this.getIndicatorFormatValue(this.getIndicatorY(), data[d.value][this.getIndicatorY()]));
+            this.showFocus(Number.parseInt(bar.attr('x')), d.bar.indicator_pos ? Number.parseInt(bar.attr('y')) : this.scales.y(0) + d.bar.scaled.height, this.scales.x(this.domains.x[0]), null, null, this.getIndicatorFormatValue(this.getIndicatorY(), data[d.value][this.getIndicatorY()]));
         }).on("mousemove", () => {
             this.tooltip2.style("top", (event.pageY + this.tooltip2.node().offsetHeight / 2 + 1) + "px").style("left", (event.pageX + 10) + "px");
             this.tooltip.style("top", (event.pageY - this.tooltip.node().offsetHeight / 2 - 1) + "px").style("left", (event.pageX + 10) + "px");
@@ -3903,7 +3903,7 @@ $(document).ready(function() {
         if (!id) {
             return;
         } else {
-            id = parseInt(id);
+            id = Number.parseInt(id);
         }
         this.info('open', id);
         let loading = this.startLoading('open', 'Lade Motion Chart');
@@ -3971,7 +3971,7 @@ $(document).ready(function() {
         if (!id) {
             return;
         } else {
-            id = parseInt(id);
+            id = Number.parseInt(id);
         }
         this.info('delete', id);
         this.confirm('Möchten Sie den Motion Chart wirklich löschen?', () => {
@@ -4124,9 +4124,9 @@ $(document).ready(function() {
         function rgb2hex(rgb) {
             rgb = rgb.match(/^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i);
             return (rgb && rgb.length === 4) ? "#" +
-            ("0" + parseInt(rgb[1], 10).toString(16)).slice(-2) +
-            ("0" + parseInt(rgb[2], 10).toString(16)).slice(-2) +
-            ("0" + parseInt(rgb[3], 10).toString(16)).slice(-2) : '';
+            ("0" + Number.parseInt(rgb[1], 10).toString(16)).slice(-2) +
+            ("0" + Number.parseInt(rgb[2], 10).toString(16)).slice(-2) +
+            ("0" + Number.parseInt(rgb[3], 10).toString(16)).slice(-2) : '';
         }
         _.each(this.data.regions, (r) => {
             let record;
