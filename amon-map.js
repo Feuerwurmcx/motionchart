@@ -1,5 +1,39 @@
 $(document).ready(function() {
     const GERMANY_BOUNDS = [[47.2708333, 5.8669444], [55.0591667, 15.0436111]];
+
+    // Flexregionen sind nur sichtbar, solange sie ausgewaehlt sind. Liefert
+    // true, wenn der Layer damit abschliessend behandelt ist.
+    function hideUnselectedFlexregion(layer, selected) {
+        const info = layer.feature.properties.layer;
+        if (!info || info.name !== "Flexregion") {
+            return false;
+        }
+        const element = layer.getElement();
+        if (selected) {
+            if (element) {
+                element.removeAttribute('hidden');
+            }
+            return false;
+        }
+        layer.setStyle({
+            opacity: 0,
+            fillColor: "#00000000"
+        });
+        if (element) {
+            element.setAttribute('hidden', true);
+        }
+        return true;
+    }
+    function bringSelectedToFront(layer) {
+        if (layer._renderer && layer._path && layer._path.parentNode) {
+            layer.bringToFront();
+            return;
+        }
+        // once() mit Kontext statt on() mit bind(): Leaflet erkennt das Paar
+        // wieder und haengt nicht bei jedem Repaint einen weiteren Handler an,
+        // der nie wieder entfernt wird.
+        layer.once('add', layer.bringToFront, layer);
+    }
     Bacon.fromLeafletEvent = function(target, eventType) {
         return Bacon.fromBinder(function(sink) {
             // Abgemeldet wurde frueher sink() statt des tatsaechlich
@@ -231,62 +265,31 @@ $(document).ready(function() {
             }
         };
         this.repaintQueue.onValue((layer) => {
-            let properties = layer.feature.properties;
-            let selected = properties.selected || false;
-            let hovered = properties.hovered || false;
-            let localData = layer.feature.extendedProperties;
-            // Frueher wurde map.layerStyle selbst veraendert. Der Stil ist aber
-            // fuer alle Layer derselbe: nach einer ausgewaehlten Region behielten
-            // alle danach gezeichneten Regionen deren opacity und Farbe. Nur
-            // weight wurde per Hand zurueckgesetzt, der Rest blieb stehen.
-            let style = _.extend({}, this.layerStyle);
-            if (properties.layer && properties.layer.name === "Flexregion") {
-                let element = layer.getElement();
-                if (!selected) {
-                    layer.setStyle({
-                        opacity: 0,
-                        fillColor: "#00000000"
-                    });
-                    if (element) {
-                        element.setAttribute('hidden', true);
-                    }
-                    return;
-                } else {
-                    if (element) {
-                        element.removeAttribute('hidden');
-                    }
-                }
+            const properties = layer.feature.properties,
+                selected = properties.selected || false,
+                hovered = properties.hovered || false,
+                localData = layer.feature.extendedProperties;
+            if (hideUnselectedFlexregion(layer, selected)) {
+                return;
             }
-            if (localData) {
-                _.extend(style, {
-                    color: this.mapColor.getColorForValueHighlight(localData.value),
-                    fillColor: this.mapColor.getColorCodeForValue(localData.value)
-                });
-                if (hovered) {
-                    _.extend(style, {
-                        fillColor: this.mapColor.getColorForValueHighlight(localData.value)
-                    });
-                }
-                if (selected) {
-                    if (layer._renderer && layer._path && layer._path.parentNode) {
-                        layer.bringToFront();
-                    } else {
-                        // once() mit Kontext statt on() mit bind(): Leaflet
-                        // erkennt das Paar wieder und haengt nicht bei jedem
-                        // Repaint einen weiteren Handler an, der nie geht.
-                        layer.once('add', layer.bringToFront, layer);
-                    }
-                    _.extend(style, {
-                        opacity: 0.75,
-                        weight: 2.5,
-                        color: '#333'
-                    });
-                }
-            } else {
-                _.extend(style, {
-                    color: "#000000",
-                    fillColor: '#cccccc'
-                });
+            // Frueher wurde this.layerStyle selbst veraendert. Der Stil ist aber
+            // fuer alle Layer derselbe: nach einer ausgewaehlten Region behielten
+            // alle danach gezeichneten Regionen deren opacity und Farbe.
+            const style = _.extend({}, this.layerStyle);
+            if (!localData) {
+                style.color = "#000000";
+                style.fillColor = '#cccccc';
+                layer.setStyle(style);
+                return;
+            }
+            const highlight = this.mapColor.getColorForValueHighlight(localData.value);
+            style.color = highlight;
+            style.fillColor = hovered ? highlight : this.mapColor.getColorCodeForValue(localData.value);
+            if (selected) {
+                bringSelectedToFront(layer);
+                style.opacity = 0.75;
+                style.weight = 2.5;
+                style.color = '#333';
             }
             layer.setStyle(style);
         });
